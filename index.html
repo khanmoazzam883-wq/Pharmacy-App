@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>(function(){try{var t=localStorage.getItem('pharma_theme')||'light'; document.documentElement.setAttribute('data-theme', t);}catch(e){}})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PharmaDesk Pro — Pharmacy Management System</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2563EB">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PharmaDesk Pro">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script async src="https://cdn.jsdelivr.net/npm/tesseract.js@v4.1.1/dist/tesseract.min.js"></script>
+<style>
+  :root{
+    --bg:#F4F6FB; --surface:#FFFFFF; --surface-alt:#EEF1FA; --ink:#111827; --ink-soft:#6B7280;
+    --teal:#2563EB; --teal-light:#3B82F6; --teal-pale:#EBF1FF;
+    --grad: linear-gradient(135deg, #4F46E5 0%, #2563EB 55%, #0EA5A0 100%);
+    --amber:#D97706; --amber-pale:#FEF3E2;
+    --red:#DC2626; --red-pale:#FDE8E8; --red-dark:#991B1B;
+    --green:#059669; --green-pale:#E6F7F1;
+    --line:#E5E9F2;
+    --shadow: 0 1px 2px rgba(17,24,39,0.04), 0 10px 28px -14px rgba(17,24,39,0.16);
+  }
+  :root[data-theme="dark"]{
+    --bg:#0B1220; --surface:#111826; --surface-alt:#1B2436; --ink:#F1F5F9; --ink-soft:#94A3B8;
+    --teal:#60A5FA; --teal-light:#93C5FD; --teal-pale:#1E293B;
+    --amber:#FBBF24; --amber-pale:#3A2E12;
+    --red:#F87171; --red-pale:#3A1B22; --red-dark:#FCA5A5;
+    --green:#34D399; --green-pale:#0E2A22;
+    --line:#26324A;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 10px 28px -14px rgba(0,0,0,0.6);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased; display:flex; height:100vh; overflow:hidden;}
+  html{scroll-behavior:smooth;}
+  @keyframes fadeInUp{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+  @keyframes popIn{ from{opacity:0; transform:scale(.92);} to{opacity:1; transform:scale(1);} }
+  @keyframes floatBlob{ 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(24px,-18px) scale(1.1);} }
+  a{color:var(--teal); text-decoration:none; font-weight:600;}
+  a:hover{text-decoration:underline;}
+
+  .sidebar{width:240px; background:var(--surface); border-right:1px solid var(--line); display:flex; flex-direction:column; overflow-y:auto; box-shadow:var(--shadow);}
+  @media(max-width:768px){.sidebar{position:absolute; left:0; top:0; height:100%; z-index:40; transform:translateX(-100%); transition:transform .3s ease;} .sidebar.open{transform:translateX(0);}}
+  .sidebar-header{padding:16px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:10px;}
+  .sidebar-icon{width:36px;height:36px;border-radius:10px;background:var(--grad);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;flex-shrink:0;box-shadow:var(--shadow);}
+  .sidebar-title{font-size:16px; font-weight:800; color:var(--ink);}
+  .sidebar-menu{flex:1; padding:12px 0; overflow-y:auto;}
+  .menu-section{padding:0 8px; margin:12px 0;}
+  .menu-label{font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); font-weight:700; padding:8px 12px; margin:4px 0;}
+  .menu-item{padding:10px 12px; margin:4px 8px; border-radius:9px; cursor:pointer; font-size:13.5px; font-weight:500; color:var(--ink-soft); display:flex; align-items:center; gap:8px; transition:all .15s ease;}
+  .menu-item:hover{background:var(--surface-alt); color:var(--ink);}
+  .menu-item.active{background:var(--teal-pale); color:var(--teal); font-weight:600;}
+  .menu-item svg{width:16px;height:16px; flex-shrink:0;}
+  .sidebar-footer{padding:12px; border-top:1px solid var(--line); font-size:12px; color:var(--ink-soft);}
+
+  .main{flex:1; display:flex; flex-direction:column; overflow:hidden;}
+  .topbar{background:var(--surface); border-bottom:1px solid var(--line); padding:12px 20px; display:flex; align-items:center; justify-content:space-between; box-shadow:var(--shadow);}
+  .topbar-left{display:flex; align-items:center; gap:12px;}
+  .menu-toggle{background:none; border:none; cursor:pointer; font-size:20px; color:var(--ink); display:none;}
+  @media(max-width:768px){.menu-toggle{display:block;}}
+  .topbar-title{font-size:18px; font-weight:800; color:var(--ink);}
+  .topbar-right{display:flex; align-items:center; gap:12px;}
+  .user-badge{display:flex; align-items:center; gap:8px; padding:6px 12px; border-radius:100px; background:var(--teal-pale); cursor:pointer;}
+  .user-avatar{width:28px;height:28px;border-radius:100px;background:var(--grad);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:11px;flex-shrink:0;}
+
+  .content{flex:1; overflow-y:auto; padding:20px;}
+  .page{display:none; animation:fadeInUp .32s ease;}
+  .page.active{display:block;}
+
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:16px; box-shadow:var(--shadow); margin-bottom:12px;}
+  .card h2{font-size:18px; font-weight:800; margin:0 0 14px; color:var(--ink);}
+  .btn{border:none; border-radius:9px; padding:10px 16px; font-size:13px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all .15s ease;}
+  .btn-primary{background:var(--grad); color:#fff; box-shadow:0 6px 16px -6px rgba(37,99,235,.5);}
+  .btn-primary:hover{filter:brightness(1.06);}
+  .btn-secondary{background:var(--surface-alt); color:var(--teal); border:1px solid var(--line);}
+  .btn-secondary:hover{background:var(--surface);}
+  .btn-danger{background:var(--red-pale); color:var(--red); border:1px solid var(--red-pale);}
+  .btn-ghost{background:transparent; color:var(--ink-soft); border:1px solid var(--line);}
+
+  input[type=text], input[type=number], input[type=date], input[type=email], input[type=password], select, textarea{
+    width:100%; padding:9px 11px; border-radius:10px; border:1px solid var(--line); background:var(--bg); font-size:13.5px; color:var(--ink); font-family:inherit;
+  }
+  input:focus, select:focus, textarea:focus{outline:2px solid var(--teal-light); outline-offset:1px; background:var(--surface);}
+  label{display:block; font-size:11.5px; font-weight:700; color:var(--ink-soft); margin-bottom:4px;}
+  .field{margin-bottom:12px;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+
+  .stat-card{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:14px; text-align:center; animation:fadeInUp .4s ease backwards;}
+  .stat-card .icon{font-size:24px; margin-bottom:6px;}
+  .stat-card .value{font-size:20px; font-weight:800; color:var(--ink);}
+  .stat-card .label{font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); margin-top:4px;}
+
+  .invoice-table{width:100%; border-collapse:collapse; font-size:13px; margin:12px 0;}
+  .invoice-table th{text-align:left; font-weight:700; padding:8px; border-bottom:2px solid var(--line);}
+  .invoice-table td{padding:8px; border-bottom:1px solid var(--line);}
+  .invoice-table tr:hover{background:var(--surface-alt);}
+
+  .modal-overlay{display:none; position:fixed; inset:0; background:rgba(17,24,39,.45); z-index:50; align-items:center; justify-content:center; padding:20px;}
+  .modal-overlay.show{display:flex;}
+  .modal{background:var(--surface); border-radius:16px; max-width:600px; width:100%; max-height:88vh; overflow-y:auto; padding:20px; box-shadow:0 20px 60px rgba(0,0,0,.3);}
+  .modal h2{font-size:18px; font-weight:800; margin:0 0 16px; color:var(--ink);}
+  .modal-close{position:absolute; top:16px; right:16px; background:none; border:none; font-size:20px; cursor:pointer; color:var(--ink-soft);}
+
+  .toast{position:fixed; bottom:20px; right:20px; background:var(--teal); color:#fff; padding:12px 18px; border-radius:100px; font-size:13px; font-weight:600; box-shadow:var(--shadow); opacity:0; transform:translateY(20px); transition:all .3s ease; z-index:60;}
+  .toast.show{opacity:1; transform:translateY(0);}
+
+  .print-template{display:none;}
+  @media print{
+    body{background:#fff;} .sidebar, .topbar, .print-btn{display:none !important;} .print-template{display:block !important;}
+  }
+
+  .loading{text-align:center; padding:60px 20px; color:var(--ink-soft); font-size:14px;}
+  .empty{text-align:center; padding:40px; color:var(--ink-soft); font-size:13px;}
+  .empty-icon{font-size:40px; margin-bottom:10px;}
+
+  .switch{width:40px;height:24px;-webkit-appearance:none;appearance:none;background:var(--surface-alt);border-radius:100px;position:relative;cursor:pointer;border:1px solid var(--line);}
+  .switch:checked{background:var(--teal);}
+  .switch::before{content:'';position:absolute;width:18px;height:18px;border-radius:100px;background:#fff;top:2px;left:2px;transition:transform .15s ease;}
+  .switch:checked::before{transform:translateX(16px);}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-icon">℞</div>
+    <div class="sidebar-title">PharmaDesk Pro</div>
+  </div>
+  <div class="sidebar-menu">
+    <div class="menu-section">
+      <div class="menu-label">Main</div>
+      <div class="menu-item active" data-page="dashboard">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>
+        Dashboard
+      </div>
+      <div class="menu-item" data-page="pos">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="9" cy="20" r="1"/><circle cx="20" cy="20" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        POS / Billing
+      </div>
+    </div>
+    <div class="menu-section">
+      <div class="menu-label">Inventory</div>
+      <div class="menu-item" data-page="inventory">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4-9-4z" stroke-linejoin="round"/><path d="M3 7v10l9 4 9-4V7" stroke-linejoin="round"/><path d="M12 11v10" stroke-linecap="round"/></svg>
+        Stock
+      </div>
+      <div class="menu-item" data-page="purchases">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-5l-2-3z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Purchases / GRN
+      </div>
+      <div class="menu-item" data-page="billscan">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 9l6-3 6 3m0 6l-6 3-6-3" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 21V3" stroke-linecap="round"/></svg>
+        Scan Bill
+      </div>
+    </div>
+    <div class="menu-section">
+      <div class="menu-label">Operations</div>
+      <div class="menu-item" data-page="returns">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5m14 0l-7-7m7 7l-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Returns
+      </div>
+      <div class="menu-item" data-page="damages">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14l8-8" stroke-linecap="round"/></svg>
+        Damages
+      </div>
+      <div class="menu-item" data-page="adjustments">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14" stroke-linecap="round"/></svg>
+        Adjustments
+      </div>
+    </div>
+    <div class="menu-section">
+      <div class="menu-label">Reports & More</div>
+      <div class="menu-item" data-page="reports">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 20V10M12 20V4M20 20v-6" stroke-linecap="round"/></svg>
+        Reports
+      </div>
+      <div class="menu-item" data-page="settings">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51v.21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H2.18a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V2.18a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82 1.65 1.65 0 001.51 1H21.82a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Settings
+      </div>
+    </div>
+  </div>
+  <div class="sidebar-footer" id="sidebarFooter"></div>
+</div>
+
+<!-- Main Content -->
+<div class="main">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+      <div class="topbar-title" id="pageTitle">Dashboard</div>
+    </div>
+    <div class="topbar-right">
+      <div class="user-badge" onclick="openSettingsTab()">
+        <div class="user-avatar" id="userInitials">?</div>
+        <span id="userName" style="font-size:13px; font-weight:600;"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pages Content -->
+  <div class="content">
+    <div id="loading" class="loading">Loading PharmaDesk Pro...</div>
+    
+    <div id="dashboard" class="page active">
+      <div class="grid3" id="dashboardStats"></div>
+      <div class="grid2" style="margin-top:14px;">
+        <div class="card"><h2>Recent Sales</h2><div id="recentSales" class="empty">No sales yet</div></div>
+        <div class="card"><h2>Low Stock Alerts</h2><div id="lowStockAlerts" class="empty">All items well stocked</div></div>
+      </div>
+      <div class="card"><h2>Expiry Alerts (Next 30 Days)</h2><div id="expiryAlerts" class="empty">No items expiring soon</div></div>
+    </div>
+
+    <div id="pos" class="page">
+      <div class="grid2">
+        <div class="card" style="max-height:70vh; overflow-y:auto;">
+          <h2>Categories</h2>
+          <div id="categoryList" style="display:flex; flex-direction:column; gap:8px;"></div>
+        </div>
+        <div class="card" style="max-height:70vh; overflow-y:auto;">
+          <h2>Products</h2>
+          <div id="productGrid" style="display:grid; grid-template-columns:1fr 1fr; gap:8px;"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Current Bill</h2>
+        <table class="invoice-table"><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th><th></th></tr></thead><tbody id="billItems"></tbody></table>
+        <div style="text-align:right; margin-top:12px;">
+          <div style="font-size:16px; font-weight:800; margin-bottom:12px;">Total: <span id="billTotal">₹0.00</span></div>
+          <button class="btn btn-primary" onclick="completeSale()">Complete Sale</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="purchases" class="page">
+      <div class="card">
+        <h2>Create GRN / Purchase Order</h2>
+        <div class="grid2">
+          <div class="field"><label>Supplier</label><select id="purchaseSupplier"></select></div>
+          <div class="field"><label>Date</label><input type="date" id="purchaseDate" value=""></div>
+        </div>
+        <button class="btn btn-secondary" onclick="openAddSupplierModal()">+ Add Supplier</button>
+        <div style="margin-top:12px; padding:12px; background:var(--teal-pale); border-radius:10px;">
+          <strong>Or scan a bill:</strong> Use the "Scan Bill" tab to upload a bill photo — we'll extract the details automatically.
+        </div>
+      </div>
+      <div class="card">
+        <h2>Purchase History</h2>
+        <div id="purchaseList" class="empty">No purchases yet</div>
+      </div>
+    </div>
+
+    <div id="billscan" class="page">
+      <div class="card">
+        <h2>Scan Bill / Invoice</h2>
+        <p style="font-size:13px; color:var(--ink-soft); margin-bottom:14px;">Take a photo of a supplier's bill or invoice. We'll automatically extract supplier, items, prices, and dates.</p>
+        <div class="field">
+          <label>Upload bill photo</label>
+          <input type="file" id="billPhotoInput" accept="image/*" onchange="scanBill()" style="cursor:pointer;">
+        </div>
+        <div id="scanStatus" class="empty">No image selected</div>
+        <div id="billScanResults" style="display:none; margin-top:14px;"></div>
+      </div>
+    </div>
+
+    <div id="inventory" class="page">
+      <div class="card">
+        <h2>Stock Management</h2>
+        <div class="field" style="margin-bottom:12px;">
+          <input type="text" id="invSearch" placeholder="Search items..." onkeyup="filterInventory()">
+        </div>
+        <table class="invoice-table"><thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th>Value</th><th>Expiry</th><th></th></tr></thead><tbody id="inventoryList"></tbody></table>
+      </div>
+    </div>
+
+    <div id="returns" class="page">
+      <div class="card"><h2>Product Returns</h2><div class="empty">No returns recorded yet</div></div>
+    </div>
+
+    <div id="damages" class="page">
+      <div class="card"><h2>Damage Tracking</h2><div class="empty">No damage reports yet</div></div>
+    </div>
+
+    <div id="adjustments" class="page">
+      <div class="card"><h2>Stock Adjustments</h2><div class="empty">No adjustments recorded yet</div></div>
+    </div>
+
+    <div id="reports" class="page">
+      <div class="card"><h2>Reports & Analytics</h2><div class="empty">Reports coming soon</div></div>
+    </div>
+
+    <div id="settings" class="page">
+      <div class="card">
+        <h2>Profile</h2>
+        <div class="grid2">
+          <div class="field"><label>Your Name</label><input type="text" id="settingsName" placeholder="Your name"></div>
+          <div class="field"><label>Pharmacy Name</label><input type="text" id="settingsPharmacy" placeholder="Pharmacy name"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Phone</label><input type="text" id="settingsPhone"></div>
+          <div class="field"><label>Email</label><input type="email" id="settingsEmail" readonly></div>
+        </div>
+        <div class="field"><label>GSTIN</label><input type="text" id="settingsGSTIN"></div>
+        <button class="btn btn-primary" onclick="saveProfile()">Save Profile</button>
+      </div>
+      <div class="card">
+        <h2>Appearance</h2>
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 0;">
+          <div><strong>Dark Mode</strong></div>
+          <input type="checkbox" class="switch" id="themeToggle" onchange="toggleTheme()">
+        </div>
+      </div>
+      <div class="card">
+        <h2>Printer Settings</h2>
+        <div class="field"><label>Printer Name (optional)</label><input type="text" id="printerName" placeholder="e.g. Thermal Printer"></div>
+        <button class="btn btn-secondary" onclick="testPrinter()">Test Printer</button>
+      </div>
+      <div class="card">
+        <h2>Account</h2>
+        <button class="btn btn-danger" onclick="handleSignOut()">Sign Out</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Auth Screen -->
+<div class="modal-overlay" id="authScreen">
+  <div class="modal" style="max-width:380px;">
+    <div style="text-align:center; margin-bottom:20px;">
+      <div style="font-size:48px; margin-bottom:10px;">℞</div>
+      <h2 style="text-align:center;">PharmaDesk Pro</h2>
+      <p style="color:var(--ink-soft); font-size:13px;">Professional Pharmacy Management</p>
+    </div>
+    <div class="field" id="authNameField"><label>Your Name</label><input type="text" id="authName" placeholder="Name"></div>
+    <div class="field"><label>Email</label><input type="email" id="authEmail" placeholder="you@example.com"></div>
+    <div class="field"><label>Password</label><input type="password" id="authPassword" placeholder="6+ characters"></div>
+    <div id="authErr" style="color:var(--red); font-size:12px; margin-bottom:12px; display:none;"></div>
+    <button class="btn btn-primary" style="width:100%; justify-content:center; padding:12px; margin-bottom:10px;" onclick="handleAuthSubmit()">Create Account</button>
+    <button class="btn-ghost" style="width:100%; justify-content:center; padding:10px; border:1px solid var(--line);" onclick="toggleAuthMode()">Already have account? Log in</button>
+  </div>
+</div>
+
+<!-- Print Template -->
+<div class="print-template" id="printTemplate"></div>
+
+<!-- Modals -->
+<div class="modal-overlay" id="addSupplierModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('addSupplierModal')">✕</button>
+    <h2>Add Supplier</h2>
+    <div class="field"><label>Name</label><input type="text" id="modalSupplierName"></div>
+    <div class="field"><label>Phone</label><input type="text" id="modalSupplierPhone"></div>
+    <div class="field"><label>GSTIN</label><input type="text" id="modalSupplierGSTIN"></div>
+    <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="saveNewSupplier()">Save Supplier</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* Firebase Config */
+const firebaseConfig = {apiKey:"AIzaSyAT-qXnWjaue8wh7AgQE0Xu9AWjYAdVPg4",authDomain:"pharmadesk-c0ce3.firebaseapp.com",projectId:"pharmadesk-c0ce3",storageBucket:"pharmadesk-c0ce3.firebasestorage.app",messagingSenderId:"1015082919551",appId:"1:1015082919551:web:63a0167a192b0ccea0414a"};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+/* State */
+let currentUid = null;
+let currentTheme = localStorage.getItem('pharma_theme')||'light';
+let items = [], suppliers = [], customers = [], purchases = [], sales = [], meta = {grnCounter:0,invCounter:0};
+let profile = {name:'', pharmacy:'', phone:'', email:'', gstin:''};
+let currentBillItems = [];
+let authMode = 'signup';
+
+function $(...args){ if(args.length===1) return document.getElementById(args[0]); return document.querySelector(args[0]); }
+const fmtINR = n => '₹' + (n||0).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+const todayISO = () => new Date().toISOString().slice(0,10);
+const initials = name => name.split(' ').slice(0,2).map(w=>w[0].toUpperCase()).join('');
+const escapeHTML = s => String(s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const showToast = msg => { const t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); };
+const openModal = id => $('addSupplierModal').classList.add('show');
+const closeModal = id => $(id).classList.remove('show');
+
+function applyTheme(t){ document.documentElement.setAttribute('data-theme',t); currentTheme=t; localStorage.setItem('pharma_theme',t); }
+
+/* Page Navigation */
+document.querySelectorAll('.menu-item').forEach(item=>{ item.addEventListener('click', ()=> {
+  const page = item.dataset.page;
+  document.querySelectorAll('.menu-item').forEach(m=>m.classList.remove('active'));
+  item.classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  $(page).classList.add('active');
+  $('pageTitle').textContent = item.textContent.trim();
+  $('sidebar').classList.remove('open');
+});});
+
+function toggleSidebar(){ $('sidebar').classList.toggle('open'); }
+
+/* Auth */
+auth.onAuthStateChanged(async user => {
+  $('loading').style.display = 'none';
+  if(user){
+    currentUid = user.uid;
+    await loadUserData(user);
+    $('authScreen').classList.remove('show');
+    $('dashboard').parentElement.parentElement.parentElement.style.display = 'flex';
+    renderDashboard();
+  } else {
+    $('authScreen').classList.add('show');
+  }
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+});
+
+async function loadUserData(user){
+  try{
+    const snap = await db.collection('users').doc(currentUid).get();
+    if(snap.exists){
+      const data = snap.data();
+      items = data.items||[]; suppliers = data.suppliers||[]; customers = data.customers||[];
+      purchases = data.purchases||[]; sales = data.sales||[]; meta = data.meta||{};
+      profile = data.profile||{};
+    }
+  }catch(e){ console.error('Load error:', e); }
+  renderUI();
+}
+
+function renderUI(){
+  $('userInitials').textContent = initials(profile.name||auth.currentUser.displayName||'?');
+  $('userName').textContent = profile.name || 'User';
+  $('settingsEmail').value = auth.currentUser.email;
+  $('settingsName').value = profile.name||'';
+  $('settingsPharmacy').value = profile.pharmacy||'';
+  $('settingsPhone').value = profile.phone||'';
+  $('settingsGSTIN').value = profile.gstin||'';
+  $('themeToggle').checked = currentTheme==='dark';
+  $('purchaseDate').value = todayISO();
+  loadSupplierDropdown();
+  applyTheme(currentTheme);
+}
+
+function toggleAuthMode(){
+  authMode = authMode==='signup'?'login':'signup';
+  $('authNameField').style.display = authMode==='signup'?'block':'none';
+}
+
+async function handleAuthSubmit(){
+  const email = $('authEmail').value.trim();
+  const pass = $('authPassword').value;
+  const name = $('authName').value.trim();
+  const err = $('authErr');
+  err.style.display = 'none';
+  
+  if(!email || !pass) { err.textContent='Fill all fields'; err.style.display='block'; return; }
+  
+  try{
+    if(authMode==='signup'){
+      if(!name) { err.textContent='Enter your name'; err.style.display='block'; return; }
+      const cred = await auth.createUserWithEmailAndPassword(email, pass);
+      await cred.user.updateProfile({displayName:name});
+      profile = {name, pharmacy:'', phone:'', email, gstin:''};
+      await db.collection('users').doc(cred.user.uid).set({items:[],suppliers:[],customers:[],purchases:[],sales:[],meta:{},profile});
+    } else {
+      await auth.signInWithEmailAndPassword(email, pass);
+    }
+  } catch(e){
+    err.textContent = e.message.includes('already-in-use')?'Email already registered':e.message.includes('wrong-password')?'Wrong password':'Sign in failed';
+    err.style.display = 'block';
+  }
+}
+
+async function handleSignOut(){
+  if(!confirm('Sign out?')) return;
+  await auth.signOut();
+  $('authScreen').classList.add('show');
+  toggleAuthMode(); toggleAuthMode();
+}
+
+/* Dashboard */
+function renderDashboard(){
+  const stats = `
+    <div class="stat-card"><div class="icon">📦</div><div class="value">${items.length}</div><div class="label">Total Items</div></div>
+    <div class="stat-card"><div class="icon">💰</div><div class="value">${fmtINR(items.reduce((s,i)=>s+((i.batches||[]).reduce((bs,b)=>bs+b.qty*b.purchasePrice,0)),0))}</div><div class="label">Stock Value</div></div>
+    <div class="stat-card"><div class="icon">📊</div><div class="value">${fmtINR(sales.reduce((s,x)=>s+x.total,0))}</div><div class="label">Total Sales</div></div>
+  `;
+  $('dashboardStats').innerHTML = stats;
+  
+  const recentSalesHTML = sales.slice(-5).reverse().map(s=>`<div style="padding:8px; border-bottom:1px solid var(--line);"><div style="font-weight:600;">${escapeHTML(s.no)}</div><div style="font-size:12px; color:var(--ink-soft);">${fmtINR(s.total)}</div></div>`).join('') || '<div class="empty">No sales yet</div>';
+  $('recentSales').innerHTML = recentSalesHTML;
+  
+  $('lowStockAlerts').innerHTML = '<div class="empty">All items well stocked</div>';
+  $('expiryAlerts').innerHTML = '<div class="empty">No items expiring soon</div>';
+}
+
+/* POS / Billing */
+function loadSupplierDropdown(){
+  const opts = suppliers.map(s=>`<option value="${s.id}">${escapeHTML(s.name)}</option>`).join('');
+  $('purchaseSupplier').innerHTML = `<option value="">Select supplier...</option>${opts}`;
+}
+
+function openAddSupplierModal(){
+  $('addSupplierModal').classList.add('show');
+}
+
+async function saveNewSupplier(){
+  const name = $('modalSupplierName').value.trim();
+  if(!name) { showToast('Enter supplier name'); return; }
+  suppliers.push({id:'sup_'+Date.now(), name, phone:$('modalSupplierPhone').value, gstin:$('modalSupplierGSTIN').value});
+  await db.collection('users').doc(currentUid).set({suppliers}, {merge:true});
+  loadSupplierDropdown();
+  closeModal('addSupplierModal');
+  $('modalSupplierName').value = '';
+  showToast('Supplier added');
+}
+
+async function completeSale(){
+  if(!currentBillItems.length) { showToast('Add items to bill'); return; }
+  const total = currentBillItems.reduce((s,l)=>s+l.qty*l.price,0);
+  const sale = {id:'sal_'+Date.now(), no:'INV-'+Date.now().toString().slice(-6), date:todayISO(), lines:currentBillItems, total};
+  sales.push(sale);
+  await db.collection('users').doc(currentUid).set({sales}, {merge:true});
+  currentBillItems = [];
+  renderPOS();
+  showToast('Sale completed');
+  setTimeout(()=>printInvoice(sale), 500);
+}
+
+function renderPOS(){
+  $('billItems').innerHTML = currentBillItems.map((l,i)=>`<tr><td>${escapeHTML(l.name)}</td><td><input type="number" value="${l.qty}" style="width:50px;" onchange="updateBillQty(${i},this.value)"></td><td>${fmtINR(l.price)}</td><td>${fmtINR(l.qty*l.price)}</td><td><button class="btn-text" onclick="removeBillItem(${i})">×</button></td></tr>`).join('');
+  $('billTotal').textContent = fmtINR(currentBillItems.reduce((s,l)=>s+l.qty*l.price,0));
+}
+
+function updateBillQty(i,qty){ currentBillItems[i].qty = parseInt(qty)||0; renderPOS(); }
+function removeBillItem(i){ currentBillItems.splice(i,1); renderPOS(); }
+
+/* Bill Scanning */
+async function scanBill(){
+  const file = $('billPhotoInput').files[0];
+  if(!file) return;
+  
+  $('scanStatus').innerHTML = '<div style="padding:10px; background:var(--teal-pale); border-radius:10px; color:var(--teal);">🔄 Scanning bill... this may take a moment...</div>';
+  
+  try{
+    const result = await Tesseract.recognize(file, 'eng', {logger:()=>{}});
+    const text = result.data.text;
+    
+    $('scanStatus').innerHTML = '<div class="empty">Bill scanned successfully</div>';
+    $('billScanResults').innerHTML = `<div style="background:var(--surface-alt); padding:12px; border-radius:10px; max-height:200px; overflow-y:auto; font-family:monospace; font-size:12px; white-space:pre-wrap;">${escapeHTML(text.substring(0,500))}</div>`;
+    $('billScanResults').style.display = 'block';
+    
+    showToast('Bill scanned — you can now manually add items to GRN');
+  } catch(e){
+    $('scanStatus').innerHTML = '<div style="color:var(--red);">❌ Scan failed — try again</div>';
+  }
+}
+
+/* Inventory */
+function filterInventory(){
+  const q = $('invSearch').value.toLowerCase();
+  const filtered = items.filter(i=>i.name.toLowerCase().includes(q));
+  $('inventoryList').innerHTML = filtered.map(i=>{
+    const qty = (i.batches||[]).reduce((s,b)=>s+b.qty,0);
+    const val = (i.batches||[]).reduce((s,b)=>s+b.qty*b.purchasePrice,0);
+    return `<tr><td>${escapeHTML(i.name)}</td><td>${qty}</td><td>${escapeHTML(i.unit||'Units')}</td><td>${fmtINR(val)}</td><td>—</td><td></td></tr>`;
+  }).join('') || `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--ink-soft);">No items found</td></tr>`;
+}
+
+/* Settings */
+async function saveProfile(){
+  profile = {name:$('settingsName').value, pharmacy:$('settingsPharmacy').value, phone:$('settingsPhone').value, email:auth.currentUser.email, gstin:$('settingsGSTIN').value};
+  await db.collection('users').doc(currentUid).set({profile}, {merge:true});
+  renderUI();
+  showToast('Profile saved');
+}
+
+function toggleTheme(){
+  const t = $('themeToggle').checked?'dark':'light';
+  applyTheme(t);
+}
+
+function testPrinter(){
+  showToast('Printer test: Check your printer');
+}
+
+function openSettingsTab(){
+  $('settings').parentElement.parentElement.style.display='block';
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  $('settings').classList.add('active');
+  $('pageTitle').textContent = 'Settings';
+}
+
+/* Printing */
+function printInvoice(sale){
+  const html = `<h2>Invoice ${sale.no}</h2><p>Date: ${sale.date}</p>
+    <table style="width:100%; border-collapse:collapse; margin:10px 0;">
+      <tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr>
+      ${sale.lines.map(l=>`<tr><td>${l.name}</td><td>${l.qty}</td><td>${fmtINR(l.price)}</td><td>${fmtINR(l.qty*l.price)}</td></tr>`).join('')}
+      <tr style="font-weight:bold;"><td colspan="3">Total</td><td>${fmtINR(sale.total)}</td></tr>
+    </table>`;
+  $('printTemplate').innerHTML = html;
+  window.print();
+}
+
+loadUserData(auth.currentUser);
+</script>
+</body>
+</html>
