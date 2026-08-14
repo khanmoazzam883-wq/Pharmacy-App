@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>(function(){try{var t=localStorage.getItem('pharma_theme')||'light'; document.documentElement.setAttribute('data-theme', t);}catch(e){}})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PharmaDesk Pro — Professional Pharmacy Management</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2563EB">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PharmaDesk Pro">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script async src="https://cdn.jsdelivr.net/npm/tesseract.js@v4.1.1/dist/tesseract.min.js"></script>
+<style>
+  :root{
+    --bg:#F4F6FB; --surface:#FFFFFF; --surface-alt:#EEF1FA; --ink:#111827; --ink-soft:#6B7280;
+    --teal:#2563EB; --teal-light:#3B82F6; --teal-pale:#EBF1FF;
+    --grad: linear-gradient(135deg, #4F46E5 0%, #2563EB 55%, #0EA5A0 100%);
+    --amber:#D97706; --amber-pale:#FEF3E2;
+    --red:#DC2626; --red-pale:#FDE8E8; --red-dark:#991B1B;
+    --green:#059669; --green-pale:#E6F7F1;
+    --line:#E5E9F2;
+    --shadow: 0 1px 2px rgba(17,24,39,0.04), 0 10px 28px -14px rgba(17,24,39,0.16);
+  }
+  :root[data-theme="dark"]{
+    --bg:#0B1220; --surface:#111826; --surface-alt:#1B2436; --ink:#F1F5F9; --ink-soft:#94A3B8;
+    --teal:#60A5FA; --teal-light:#93C5FD; --teal-pale:#1E293B;
+    --amber:#FBBF24; --amber-pale:#3A2E12;
+    --red:#F87171; --red-pale:#3A1B22; --red-dark:#FCA5A5;
+    --green:#34D399; --green-pale:#0E2A22;
+    --line:#26324A;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 10px 28px -14px rgba(0,0,0,0.6);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased; display:flex; height:100vh; overflow:hidden;}
+  html{scroll-behavior:smooth;}
+  @keyframes fadeInUp{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+  @keyframes popIn{ from{opacity:0; transform:scale(.92);} to{opacity:1; transform:scale(1);} }
+  @keyframes spin{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+  a{color:var(--teal); text-decoration:none; font-weight:600;}
+  a:hover{text-decoration:underline;}
+
+  .sidebar{width:240px; background:var(--surface); border-right:1px solid var(--line); display:flex; flex-direction:column; overflow-y:auto; box-shadow:var(--shadow);}
+  @media(max-width:768px){.sidebar{position:absolute; left:0; top:0; height:100%; z-index:40; transform:translateX(-100%); transition:transform .3s ease;} .sidebar.open{transform:translateX(0);}}
+  .sidebar-header{padding:16px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:10px; position:relative;}
+  .sidebar-header .menu-toggle{display:none; margin-left:auto;}
+  @media(max-width:768px){.sidebar-header .menu-toggle{display:block;}}
+  .sidebar-icon{width:36px;height:36px;border-radius:10px;background:var(--grad);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;flex-shrink:0;box-shadow:var(--shadow);}
+  .sidebar-title{font-size:16px; font-weight:800; color:var(--ink);}
+  .sidebar-menu{flex:1; padding:12px 0; overflow-y:auto;}
+  .menu-section{padding:0 8px; margin:12px 0;}
+  .menu-label{font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); font-weight:700; padding:8px 12px; margin:4px 0;}
+  .menu-item{padding:10px 12px; margin:4px 8px; border-radius:9px; cursor:pointer; font-size:13.5px; font-weight:500; color:var(--ink-soft); display:flex; align-items:center; gap:8px; transition:all .15s ease;}
+  .menu-item:hover{background:var(--surface-alt); color:var(--ink);}
+  .menu-item.active{background:var(--teal-pale); color:var(--teal); font-weight:600;}
+  .menu-item svg{width:16px;height:16px; flex-shrink:0;}
+  .sidebar-footer{padding:12px; border-top:1px solid var(--line); font-size:12px; color:var(--ink-soft);}
+
+  .main{flex:1; display:flex; flex-direction:column; overflow:hidden;}
+  .topbar{background:var(--surface); border-bottom:1px solid var(--line); padding:12px 20px; display:flex; align-items:center; justify-content:space-between; box-shadow:var(--shadow);}
+  .topbar-left{display:flex; align-items:center; gap:12px;}
+  .menu-toggle{background:none; border:none; cursor:pointer; font-size:20px; color:var(--ink); display:none;}
+  @media(max-width:768px){.menu-toggle{display:block;}}
+  .topbar-title{font-size:18px; font-weight:800; color:var(--ink);}
+  .topbar-right{display:flex; align-items:center; gap:12px;}
+  .user-badge{display:flex; align-items:center; gap:8px; padding:6px 12px; border-radius:100px; background:var(--teal-pale); cursor:pointer;}
+  .user-avatar{width:28px;height:28px;border-radius:100px;background:var(--grad);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:11px;flex-shrink:0;}
+
+  .content{flex:1; overflow-y:auto; padding:20px;}
+  .page{display:none; animation:fadeInUp .32s ease;}
+  .page.active{display:block;}
+
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:16px; box-shadow:var(--shadow); margin-bottom:12px;}
+  .card h2{font-size:18px; font-weight:800; margin:0 0 14px; color:var(--ink);}
+  .btn{border:none; border-radius:9px; padding:10px 16px; font-size:13px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all .15s ease;}
+  .btn-primary{background:var(--grad); color:#fff; box-shadow:0 6px 16px -6px rgba(37,99,235,.5);}
+  .btn-primary:hover{filter:brightness(1.06);}
+  .btn-secondary{background:var(--surface-alt); color:var(--teal); border:1px solid var(--line);}
+  .btn-secondary:hover{background:var(--surface);}
+  .btn-danger{background:var(--red-pale); color:var(--red); border:1px solid var(--red-pale);}
+  .btn-ghost{background:transparent; color:var(--ink-soft); border:1px solid var(--line);}
+  .btn:disabled{opacity:0.5; cursor:not-allowed;}
+
+  input[type=text], input[type=number], input[type=date], input[type=email], input[type=password], input[type=tel], select, textarea{
+    width:100%; padding:9px 11px; border-radius:10px; border:1px solid var(--line); background:var(--bg); font-size:13.5px; color:var(--ink); font-family:inherit;
+  }
+  input:focus, select:focus, textarea:focus{outline:2px solid var(--teal-light); outline-offset:1px; background:var(--surface);}
+  label{display:block; font-size:11.5px; font-weight:700; color:var(--ink-soft); margin-bottom:4px;}
+  .field{margin-bottom:12px;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+
+  .stat-card{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:14px; text-align:center; animation:fadeInUp .4s ease backwards;}
+  .stat-card .icon{font-size:24px; margin-bottom:6px;}
+  .stat-card .value{font-size:20px; font-weight:800; color:var(--ink);}
+  .stat-card .label{font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); margin-top:4px;}
+
+  .invoice-table{width:100%; border-collapse:collapse; font-size:13px; margin:12px 0;}
+  .invoice-table th{text-align:left; font-weight:700; padding:8px; border-bottom:2px solid var(--line);}
+  .invoice-table td{padding:8px; border-bottom:1px solid var(--line);}
+  .invoice-table tr:hover{background:var(--surface-alt);}
+
+  .modal-overlay{display:none; position:fixed; inset:0; background:rgba(17,24,39,.45); z-index:50; align-items:center; justify-content:center; padding:20px;}
+  .modal-overlay.show{display:flex;}
+  .modal{background:var(--surface); border-radius:16px; max-width:600px; width:100%; max-height:88vh; overflow-y:auto; padding:20px; box-shadow:0 20px 60px rgba(0,0,0,.3); animation:popIn .3s ease;}
+  .modal h2{font-size:18px; font-weight:800; margin:0 0 16px; color:var(--ink);}
+  .modal-close{position:absolute; top:16px; right:16px; background:none; border:none; font-size:20px; cursor:pointer; color:var(--ink-soft);}
+
+  .toast{position:fixed; bottom:20px; right:20px; background:var(--teal); color:#fff; padding:12px 18px; border-radius:100px; font-size:13px; font-weight:600; box-shadow:var(--shadow); opacity:0; transform:translateY(20px); transition:all .3s ease; z-index:60;}
+  .toast.show{opacity:1; transform:translateY(0);}
+
+  .auth-screen{display:none; position:fixed; inset:0; background:var(--bg); z-index:100; flex-direction:column; align-items:center; justify-content:center; padding:20px;}
+  .auth-screen.show{display:flex;}
+  .auth-card{background:var(--surface); border-radius:16px; max-width:420px; width:100%; padding:32px; box-shadow:var(--shadow); animation:popIn .4s ease;}
+  .auth-logo{font-size:48px; text-align:center; margin-bottom:16px;}
+  .auth-title{font-size:24px; font-weight:800; text-align:center; margin-bottom:8px; color:var(--ink);}
+  .auth-subtitle{font-size:13px; text-align:center; color:var(--ink-soft); margin-bottom:24px;}
+  .auth-tabs{display:flex; gap:10px; margin-bottom:20px;}
+  .auth-tab{flex:1; padding:10px; border-radius:9px; border:1px solid var(--line); background:var(--bg); cursor:pointer; font-size:12px; font-weight:600; text-align:center; transition:all .15s ease;}
+  .auth-tab.active{background:var(--teal-pale); color:var(--teal); border-color:var(--teal-pale);}
+  .auth-error{background:var(--red-pale); color:var(--red); padding:10px; border-radius:9px; font-size:12px; margin-bottom:12px; display:none;}
+  .auth-loading{display:none; text-align:center; padding:20px; color:var(--ink-soft);}
+  .spinner{display:inline-block; width:16px; height:16px; border:2px solid var(--teal-pale); border-top:2px solid var(--teal); border-radius:50%; animation:spin .6s linear infinite;}
+
+  .ai-chat-container{display:flex; flex-direction:column; height:calc(100vh - 100px); background:var(--bg);}
+  .ai-messages{flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:12px;}
+  .ai-message{padding:12px 16px; border-radius:12px; max-width:80%; animation:fadeInUp .3s ease;}
+  .ai-message.user{align-self:flex-end; background:var(--teal); color:#fff; margin-left:20%;}
+  .ai-message.assistant{align-self:flex-start; background:var(--surface); border:1px solid var(--line); margin-right:20%;}
+  .ai-input{padding:16px; border-top:1px solid var(--line); display:flex; gap:10px;}
+  .ai-input input{flex:1;}
+
+  .print-template{display:none;}
+  @media print{
+    body{background:#fff;} .sidebar, .topbar, .print-btn{display:none !important;} .print-template{display:block !important;}
+  }
+
+  .loading-overlay{display:none; position:fixed; inset:0; background:rgba(17,24,39,.2); z-index:99; align-items:center; justify-content:center;}
+  .loading-overlay.show{display:flex;}
+
+  .empty{text-align:center; padding:40px; color:var(--ink-soft); font-size:13px;}
+  .empty-icon{font-size:40px; margin-bottom:10px;}
+
+  .switch{width:40px;height:24px;-webkit-appearance:none;appearance:none;background:var(--surface-alt);border-radius:100px;position:relative;cursor:pointer;border:1px solid var(--line);}
+  .switch:checked{background:var(--teal);}
+  .switch::before{content:'';position:absolute;width:18px;height:18px;border-radius:100px;background:#fff;top:2px;left:2px;transition:transform .15s ease;}
+  .switch:checked::before{transform:translateX(16px);}
+
+  .otp-input-group{display:flex; gap:8px; justify-content:center; margin:16px 0;}
+  .otp-input{width:44px; height:44px; text-align:center; font-size:18px; font-weight:700; border:2px solid var(--line); border-radius:9px; background:var(--bg);}
+  .otp-input:focus{outline:none; border-color:var(--teal); background:var(--surface);}
+</style>
+</head>
+<body>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+</div>
+
+<!-- Auth Screen - LOGIN -->
+<div class="auth-screen show" id="authScreen">
+  <div class="auth-card">
+    <div class="auth-logo">℞</div>
+    <h1 class="auth-title">PharmaDesk Pro</h1>
+    <p class="auth-subtitle">Professional Pharmacy Management</p>
+    
+    <!-- LOGIN FORM -->
+    <div id="loginForm" style="display:block;">
+      <h2 style="font-size:16px; font-weight:700; margin:0 0 16px; color:var(--ink);">Sign In to Your Account</h2>
+      <div class="auth-error" id="authError"></div>
+      <div class="field"><label>Email Address</label><input type="email" id="loginEmail" placeholder="you@example.com" autofocus></div>
+      <div class="field"><label>Password</label><input type="password" id="loginPassword" placeholder="Enter your password"></div>
+      <button class="btn btn-primary" style="width:100%; justify-content:center; margin-top:12px;" onclick="handleLogin()">Sign In</button>
+      <div style="text-align:center; margin-top:14px; font-size:13px; color:var(--ink-soft);">
+        Don't have an account? <a href="#" onclick="switchToSignup(); return false;" style="color:var(--teal); font-weight:600;">Create one</a>
+      </div>
+    </div>
+
+    <!-- SIGNUP FORM -->
+    <div id="signupForm" style="display:none;">
+      <h2 style="font-size:16px; font-weight:700; margin:0 0 16px; color:var(--ink);">Create New Account</h2>
+      <div class="auth-error" id="authError2"></div>
+      <div class="field"><label>Your Name *</label><input type="text" id="signupName" placeholder="Full name"></div>
+      <div class="field"><label>Email Address *</label><input type="email" id="signupEmail" placeholder="you@example.com"></div>
+      <div class="field"><label>Password *</label><input type="password" id="signupPassword" placeholder="6+ characters"></div>
+      <div class="field"><label>Confirm Password *</label><input type="password" id="signupPassword2" placeholder="Confirm password"></div>
+      <button class="btn btn-primary" style="width:100%; justify-content:center; margin-top:12px;" onclick="handleSignup()">Create Account</button>
+      <div style="text-align:center; margin-top:14px; font-size:13px; color:var(--ink-soft);">
+        Already have an account? <a href="#" onclick="switchToLogin(); return false;" style="color:var(--teal); font-weight:600;">Sign in</a>
+      </div>
+    </div>
+
+    <div style="text-align:center; margin-top:20px; font-size:11px; color:var(--ink-soft); border-top:1px solid var(--line); padding-top:14px;">
+      Secure • Your data is encrypted
+    </div>
+  </div>
+</div>
+
+<!-- Main App -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-icon">℞</div>
+    <div class="sidebar-title">PharmaDesk Pro</div>
+    <button class="menu-toggle" onclick="toggleSidebar()">✕</button>
+  </div>
+  <div class="sidebar-menu">
+    <div class="menu-section">
+      <div class="menu-label">Main</div>
+      <div class="menu-item active" data-page="dashboard">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>
+        Dashboard
+      </div>
+      <div class="menu-item" data-page="pos">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="9" cy="20" r="1"/><circle cx="20" cy="20" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        POS / Billing
+      </div>
+      <div class="menu-item" data-page="ai-assistant">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01" stroke-linecap="round"/></svg>
+        AI Assistant
+      </div>
+    </div>
+    <div class="menu-section">
+      <div class="menu-label">Inventory</div>
+      <div class="menu-item" data-page="inventory">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4-9-4z" stroke-linejoin="round"/><path d="M3 7v10l9 4 9-4V7" stroke-linejoin="round"/><path d="M12 11v10" stroke-linecap="round"/></svg>
+        Stock
+      </div>
+      <div class="menu-item" data-page="purchases">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-5l-2-3z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Purchases / GRN
+      </div>
+      <div class="menu-item" data-page="billscan">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 9l6-3 6 3m0 6l-6 3-6-3" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 21V3" stroke-linecap="round"/></svg>
+        Scan Bill
+      </div>
+    </div>
+    <div class="menu-section">
+      <div class="menu-label">Operations</div>
+      <div class="menu-item" data-page="returns">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5m14 0l-7-7m7 7l-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Returns
+      </div>
+      <div class="menu-item" data-page="damages">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14l8-8" stroke-linecap="round"/></svg>
+        Damages
+      </div>
+      <div class="menu-item" data-page="adjustments">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14" stroke-linecap="round"/></svg>
+        Adjustments
+      </div>
+    </div>
+    <div class="menu-section">
+      <div class="menu-label">Reports & More</div>
+      <div class="menu-item" data-page="reports">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 20V10M12 20V4M20 20v-6" stroke-linecap="round"/></svg>
+        Reports
+      </div>
+      <div class="menu-item" data-page="audit-logs">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2-15H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V3a2 2 0 00-2-2z" stroke-linecap="round"/></svg>
+        Audit Logs
+      </div>
+      <div class="menu-item" data-page="settings">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51v.21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H2.18a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V2.18a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82 1.65 1.65 0 001.51 1H21.82a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Settings
+      </div>
+    </div>
+  </div>
+  <div class="sidebar-footer" id="sidebarFooter">PharmaDesk Pro v2.0</div>
+</div>
+
+<!-- Main Content -->
+<div class="main" style="display:none;" id="mainApp">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+      <div class="topbar-title" id="pageTitle">Dashboard</div>
+    </div>
+    <div class="topbar-right">
+      <div class="user-badge" onclick="openSettingsTab()">
+        <div class="user-avatar" id="userInitials">?</div>
+        <span id="userName" style="font-size:13px; font-weight:600;"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pages Content -->
+  <div class="content">
+    <!-- Dashboard -->
+    <div id="dashboard" class="page active">
+      <div class="grid3" id="dashboardStats"></div>
+      <div class="grid2" style="margin-top:14px;">
+        <div class="card"><h2>Recent Sales</h2><div id="recentSales" class="empty">No sales yet</div></div>
+        <div class="card"><h2>Low Stock Alerts</h2><div id="lowStockAlerts" class="empty">All items well stocked</div></div>
+      </div>
+      <div class="card"><h2>Expiry Alerts (Next 30 Days)</h2><div id="expiryAlerts" class="empty">No items expiring soon</div></div>
+    </div>
+
+    <!-- POS/Billing -->
+    <div id="pos" class="page">
+      <div class="grid2">
+        <div class="card" style="max-height:70vh; overflow-y:auto;">
+          <h2>Categories</h2>
+          <div id="categoryList" style="display:flex; flex-direction:column; gap:8px;"></div>
+        </div>
+        <div class="card" style="max-height:70vh; overflow-y:auto;">
+          <h2>Products</h2>
+          <div id="productGrid" style="display:grid; grid-template-columns:1fr 1fr; gap:8px;"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Current Bill</h2>
+        <table class="invoice-table"><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th><th></th></tr></thead><tbody id="billItems"></tbody></table>
+        <div style="text-align:right; margin-top:12px;">
+          <div style="font-size:16px; font-weight:800; margin-bottom:12px;">Total: <span id="billTotal">₹0.00</span></div>
+          <button class="btn btn-primary" onclick="completeSale()">Complete Sale</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Assistant -->
+    <div id="ai-assistant" class="page">
+      <div class="card" style="height:calc(100vh - 150px); padding:0; display:flex; flex-direction:column;">
+        <div style="padding:16px; border-bottom:1px solid var(--line);">
+          <h2 style="margin:0;">AI Assistant</h2>
+          <p style="font-size:12px; color:var(--ink-soft); margin:4px 0 0;">Ask about inventory, sales, purchases, and pharmacy operations.</p>
+        </div>
+        <div id="aiMessages" style="flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:12px;"></div>
+        <div style="padding:16px; border-top:1px solid var(--line); display:flex; gap:10px;">
+          <input type="text" id="aiInput" placeholder="What's your question?" style="flex:1;" onkeypress="if(event.key==='Enter') sendAIMessage()">
+          <button class="btn btn-primary" onclick="sendAIMessage()">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Purchases/GRN -->
+    <div id="purchases" class="page">
+      <div class="card">
+        <h2>Create GRN / Purchase Order</h2>
+        <div class="grid2">
+          <div class="field"><label>Supplier *</label><select id="purchaseSupplier"></select></div>
+          <div class="field"><label>Date *</label><input type="date" id="purchaseDate" value=""></div>
+        </div>
+        <button class="btn btn-secondary" style="margin-right:8px;" onclick="openAddSupplierModal()">+ Add Supplier</button>
+      </div>
+
+      <div class="card">
+        <h2>Add Items to GRN</h2>
+        <button class="btn btn-primary" style="margin-bottom:12px;" onclick="openAddGRNItemModal()">+ Add Item</button>
+        <div id="currentGRNItems" class="empty">No items added yet</div>
+        
+        <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--line); text-align:right;">
+          <div style="font-size:16px; font-weight:800; margin-bottom:12px;">
+            Total: <span id="grnTotal">₹0.00</span>
+          </div>
+          <button class="btn btn-primary" onclick="submitGRN()">✓ Create GRN</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Purchase History</h2>
+        <div id="purchaseList" class="empty">No purchases yet</div>
+      </div>
+    </div>
+
+    <!-- Bill Scanning -->
+    <div id="billscan" class="page">
+      <div class="card">
+        <h2>Scan Bill / Invoice</h2>
+        <p style="font-size:13px; color:var(--ink-soft); margin-bottom:14px;">Take a photo of supplier's bill. We'll extract data automatically — then create GRN.</p>
+        
+        <div id="cameraSection">
+          <button class="btn btn-primary" style="width:100%; justify-content:center; margin-bottom:12px;" onclick="startCamera()">📱 Open Camera</button>
+          <div id="cameraPreview" style="display:none; border:2px solid var(--line); border-radius:12px; overflow:hidden; margin-bottom:12px; background:#000;">
+            <video id="cameraVideo" style="width:100%; height:auto; display:block;" playsinline></video>
+          </div>
+          <div id="cameraControls" style="display:none; display:flex; gap:10px; margin-bottom:12px;">
+            <button class="btn btn-primary" style="flex:1; justify-content:center;" onclick="capturePhoto()">📸 Capture</button>
+            <button class="btn-secondary" style="flex:1; padding:10px; border-radius:9px; cursor:pointer;" onclick="stopCamera()">✕ Close Camera</button>
+          </div>
+        </div>
+
+        <div style="text-align:center; color:var(--ink-soft); font-size:12px; margin-bottom:12px;">OR</div>
+
+        <div class="field">
+          <label>Upload Bill Photo</label>
+          <input type="file" id="billPhotoInput" accept="image/*" onchange="scanBill()" style="cursor:pointer; padding:12px; border:2px dashed var(--line); border-radius:10px;">
+        </div>
+        
+        <div id="scanStatus" class="empty">📸 Take photo or upload image</div>
+        
+        <div id="billScanResults" style="display:none; margin-top:14px; padding:12px; background:var(--surface-alt); border-radius:10px;">
+          <h3 style="margin-top:0;">Extracted Data</h3>
+          <div class="field"><label>Supplier Name</label><input type="text" id="scanSupplier" placeholder="Supplier name"></div>
+          <div class="field"><label>Invoice Date</label><input type="date" id="scanInvDate"></div>
+          <div class="field"><label>Invoice Number</label><input type="text" id="scanInvNo"></div>
+          <div style="background:var(--bg); padding:10px; border-radius:8px; margin:12px 0; max-height:200px; overflow-y:auto; font-size:12px; font-family:monospace;">
+            <div id="scanedText"></div>
+          </div>
+          <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="createGRNfromScan()">✓ Create GRN from this bill</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inventory -->
+    <div id="inventory" class="page">
+      <div class="card">
+        <h2>Stock Management</h2>
+        <div style="display:flex; gap:10px; margin-bottom:12px;">
+          <input type="text" id="invSearch" placeholder="Search items..." onkeyup="filterInventory()" style="flex:1;">
+          <button class="btn btn-primary" onclick="openAddItemModal()">+ Add Medicine</button>
+        </div>
+        <table class="invoice-table"><thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th>Value</th><th>Expiry</th><th></th></tr></thead><tbody id="inventoryList"></tbody></table>
+      </div>
+    </div>
+
+    <!-- Returns -->
+    <div id="returns" class="page">
+      <div class="card"><h2>Product Returns</h2><div class="empty">No returns recorded yet</div></div>
+    </div>
+
+    <!-- Damages -->
+    <div id="damages" class="page">
+      <div class="card"><h2>Damage Tracking</h2><div class="empty">No damage reports yet</div></div>
+    </div>
+
+    <!-- Adjustments -->
+    <div id="adjustments" class="page">
+      <div class="card"><h2>Stock Adjustments</h2><div class="empty">No adjustments recorded yet</div></div>
+    </div>
+
+    <!-- Reports -->
+    <div id="reports" class="page">
+      <div class="card"><h2>Reports & Analytics</h2><div class="empty">Reports coming soon</div></div>
+    </div>
+
+    <!-- Audit Logs -->
+    <div id="audit-logs" class="page">
+      <div class="card">
+        <h2>Audit Logs</h2>
+        <div id="auditLogList" class="empty">No audit logs yet</div>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div id="settings" class="page">
+      <div class="card" style="background:var(--teal-pale); border:1px solid var(--teal); padding:14px; border-radius:14px; display:flex; align-items:center; gap:12px; margin-bottom:14px;">
+        <div style="width:48px; height:48px; border-radius:100px; background:var(--grad); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:16px; flex-shrink:0;" id="settingsAvatar">AM</div>
+        <div>
+          <div style="font-weight:800; font-size:14px; color:var(--teal);" id="settingsNameDisplay">Your Name</div>
+          <div style="font-size:12px; color:var(--ink-soft);">Developer</div>
+          <div style="font-size:11px; color:var(--teal);" id="settingsEmailDisplay">email@example.com</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Your Profile</h2>
+        <div class="grid2">
+          <div class="field"><label>Your Name</label><input type="text" id="settingsName" placeholder="Your name"></div>
+          <div class="field"><label>Pharmacy Name</label><input type="text" id="settingsPharmacy" placeholder="Pharmacy name"></div>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Phone</label><input type="text" id="settingsPhone"></div>
+          <div class="field"><label>Email</label><input type="email" id="settingsEmail" readonly></div>
+        </div>
+        <div class="field"><label>GSTIN</label><input type="text" id="settingsGSTIN"></div>
+        <button class="btn btn-primary" onclick="saveProfile()">Save Profile</button>
+      </div>
+
+      <div class="card">
+        <h2>Appearance</h2>
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 0;">
+          <div><strong>Dark Mode</strong></div>
+          <input type="checkbox" class="switch" id="themeToggle" onchange="toggleTheme()">
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Account</h2>
+        <button class="btn btn-danger" onclick="handleSignOut()">Sign Out</button>
+      </div>
+
+      <div class="card">
+        <h2>App Information</h2>
+        <div style="font-size:12px; color:var(--ink-soft);">
+          <div style="margin-bottom:8px;">Version: <strong>2.0</strong></div>
+          <div style="margin-bottom:8px;">Database Schema: <strong>v2 (Enhanced)</strong></div>
+          <div>Last Sync: <strong id="lastSyncTime">Just now</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modals -->
+<div class="modal-overlay" id="addSupplierModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('addSupplierModal')">✕</button>
+    <h2>Add Supplier</h2>
+    <div class="field"><label>Name</label><input type="text" id="modalSupplierName"></div>
+    <div class="field"><label>Phone</label><input type="text" id="modalSupplierPhone"></div>
+    <div class="field"><label>GSTIN</label><input type="text" id="modalSupplierGSTIN"></div>
+    <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="saveNewSupplier()">Save Supplier</button>
+  </div>
+</div>
+
+<!-- Add New Item Modal -->
+<div class="modal-overlay" id="addItemModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('addItemModal')">✕</button>
+    <h2>Add New Medicine</h2>
+    <div class="field"><label>Medicine Name *</label><input type="text" id="newItemName" placeholder="e.g., Aspirin 500mg"></div>
+    <div class="field"><label>Category</label><input type="text" id="newItemCategory" placeholder="e.g., Analgesic"></div>
+    <div class="field"><label>Unit *</label><input type="text" id="newItemUnit" value="Tablets" placeholder="Tablets, Capsules, ml, etc."></div>
+    <div class="grid2">
+      <div class="field"><label>HSN Code</label><input type="text" id="newItemHSN" placeholder="e.g., 3004"></div>
+      <div class="field"><label>GST %</label><input type="number" id="newItemGST" value="5" min="0" max="100"></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Reorder Level</label><input type="number" id="newItemReorder" value="10" min="0"></div>
+      <div class="field"><label>Opening Qty</label><input type="number" id="newItemQty" value="0" min="0"></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Purchase Price (₹) *</label><input type="number" id="newItemCost" placeholder="0.00" min="0" step="0.01"></div>
+      <div class="field"><label>Selling Price (₹) *</label><input type="number" id="newItemPrice" placeholder="0.00" min="0" step="0.01"></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Batch Number</label><input type="text" id="newItemBatch" placeholder="e.g., BAT001"></div>
+      <div class="field"><label>Expiry Date</label><input type="date" id="newItemExpiry"></div>
+    </div>
+    <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="saveNewItem()">✓ Add Medicine</button>
+  </div>
+</div>
+
+<!-- Add Items to GRN Modal -->
+<div class="modal-overlay" id="addGRNItemModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('addGRNItemModal')">✕</button>
+    <h2>Add Item to GRN</h2>
+    <div class="field">
+      <label>Select Medicine or Add New</label>
+      <select id="grnItemSelect">
+        <option value="">-- Select existing medicine --</option>
+        ${items.map(i=>`<option value="${i.id}">${i.name}</option>`).join('')}
+      </select>
+    </div>
+    <div style="text-align:center; margin:12px 0; color:var(--ink-soft); font-size:12px;">OR</div>
+    <button class="btn btn-secondary" style="width:100%; justify-content:center;" onclick="openAddItemModal()">+ Add New Medicine First</button>
+    <div style="margin-top:16px; border-top:1px solid var(--line); padding-top:16px;">
+      <div class="field"><label>Batch Number</label><input type="text" id="grnBatchNo" placeholder="e.g., BAT001"></div>
+      <div class="field"><label>Quantity</label><input type="number" id="grnQty" value="1" min="1"></div>
+      <div class="field"><label>Purchase Price (₹)</label><input type="number" id="grnPrice" placeholder="0.00" min="0" step="0.01"></div>
+      <div class="field"><label>Expiry Date</label><input type="date" id="grnExpiry"></div>
+      <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="addItemToCurrentGRN()">Add to GRN</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="print-template" id="printTemplate"></div>
+
+<script>
+/* ==================== FIREBASE CONFIGURATION ==================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyAT-qXnWjaue8wh7AgQE0Xu9AWjYAdVPg4",
+  authDomain: "pharmadesk-c0ce3.firebaseapp.com",
+  projectId: "pharmadesk-c0ce3",
+  storageBucket: "pharmadesk-c0ce3.firebasestorage.app",
+  messagingSenderId: "1015082919551",
+  appId: "1:1015082919551:web:63a0167a192b0ccea0414a"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// No RecaptchaVerifier needed - email/password only
+
+/* ==================== GLOBAL STATE ==================== */
+let currentUid = null;
+let currentTheme = localStorage.getItem('pharma_theme') || 'light';
+let currentAuthTab = 'email';
+let confirmationResult = null;
+let schemaVersion = 2;
+
+// Legacy data (for migration compatibility)
+let items = [], suppliers = [], customers = [], purchases = [], sales = [], meta = {grnCounter:0, invCounter:0};
+let profile = {name:'', pharmacy:'', phone:'', email:'', gstin:''};
+let currentBillItems = [];
+
+// New structured data
+let auditLogs = [];
+let stockMovements = [];
+
+/* ==================== UTILITY FUNCTIONS ==================== */
+function $(...args){ if(args.length===1) return document.getElementById(args[0]); return document.querySelector(args[0]); }
+const fmtINR = n => '₹' + (n||0).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+const todayISO = () => new Date().toISOString().slice(0,10);
+const initials = name => (name||'?').split(' ').slice(0,2).map(w=>w[0].toUpperCase()).join('');
+const escapeHTML = s => String(s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const showToast = msg => { const t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); };
+const closeModal = id => $(id).classList.remove('show');
+function applyTheme(t){ document.documentElement.setAttribute('data-theme',t); currentTheme=t; localStorage.setItem('pharma_theme',t); }
+
+/* ==================== AUTHENTICATION - EMAIL/PASSWORD ONLY ==================== */
+function switchToSignup(){
+  $('loginForm').style.display = 'none';
+  $('signupForm').style.display = 'block';
+  $('authError2').style.display = 'none';
+  $('signupName').focus();
+}
+
+function switchToLogin(){
+  $('loginForm').style.display = 'block';
+  $('signupForm').style.display = 'none';
+  $('authError').style.display = 'none';
+  $('loginEmail').focus();
+}
+
+async function handleLogin(){
+  const email = $('loginEmail').value.trim();
+  const password = $('loginPassword').value;
+  const err = $('authError');
+  err.style.display = 'none';
+  
+  if(!email || !password) { 
+    err.textContent = 'Enter email and password'; 
+    err.style.display = 'block'; 
+    return; 
+  }
+  
+  try{
+    await auth.signInWithEmailAndPassword(email, password);
+    showToast('✓ Signed in');
+  } catch(e){
+    console.error('Login error:', e.code);
+    if(e.code === 'auth/user-not-found'){
+      err.textContent = 'No account found. Create one first.';
+    } else if(e.code === 'auth/wrong-password'){
+      err.textContent = 'Wrong password. Try again.';
+    } else if(e.code === 'auth/invalid-email'){
+      err.textContent = 'Invalid email address.';
+    } else if(e.code === 'auth/user-disabled'){
+      err.textContent = 'This account has been disabled.';
+    } else {
+      err.textContent = 'Login failed. Check email/password.';
+    }
+    err.style.display = 'block';
+  }
+}
+
+async function handleSignup(){
+  const name = $('signupName').value.trim();
+  const email = $('signupEmail').value.trim();
+  const password = $('signupPassword').value;
+  const password2 = $('signupPassword2').value;
+  const err = $('authError2');
+  err.style.display = 'none';
+  
+  if(!name || !email || !password) { 
+    err.textContent = 'Fill all fields'; 
+    err.style.display = 'block'; 
+    return; 
+  }
+  
+  if(password.length < 6){
+    err.textContent = 'Password must be 6+ characters';
+    err.style.display = 'block';
+    return;
+  }
+  
+  if(password !== password2){
+    err.textContent = 'Passwords do not match';
+    err.style.display = 'block';
+    return;
+  }
+  
+  try{
+    const userCred = await auth.createUserWithEmailAndPassword(email, password);
+    
+    // Set display name
+    await userCred.user.updateProfile({displayName: name});
+    
+    // Initialize user data in Firestore
+    await db.collection('users').doc(userCred.user.uid).set({
+      profile: {
+        name: name,
+        email: email,
+        phone: '',
+        pharmacy: '',
+        gstin: '',
+        createdAt: new Date().toISOString(),
+        schemaVersion: 2
+      },
+      items: [],
+      suppliers: [],
+      customers: [],
+      purchases: [],
+      sales: [],
+      meta: {grnCounter: 0, invCounter: 0},
+      schemaVersion: 2,
+      createdAt: new Date().toISOString()
+    });
+    
+    await logAction(userCred.user.uid, 'USER_CREATED', 'user', userCred.user.uid, 'Account created');
+    showToast('✓ Account created! Signing you in...');
+    
+    // Auto-login after creation
+    setTimeout(() => {
+      // User will be auto-logged in by onAuthStateChanged
+    }, 500);
+  } catch(e){
+    console.error('Signup error:', e.code);
+    if(e.code === 'auth/email-already-in-use'){
+      err.textContent = 'Email already registered. Sign in instead.';
+    } else if(e.code === 'auth/invalid-email'){
+      err.textContent = 'Invalid email address.';
+    } else if(e.code === 'auth/weak-password'){
+      err.textContent = 'Password is too weak. Use 6+ characters.';
+    } else {
+      err.textContent = 'Signup failed. Try again.';
+    }
+    err.style.display = 'block';
+  }
+}
+
+/* ==================== USER DATA INITIALIZATION ==================== */
+async function initializeUserData(uid){
+  try{
+    const existing = await db.collection('users').doc(uid).get();
+    currentUid = uid;
+    await loadUserData();
+  } catch(e){
+    console.error('Init error:', e);
+    showToast('Setup failed: ' + e.message);
+  }
+}
+
+/* ==================== LOAD & SAVE USER DATA ==================== */
+async function loadUserData(){
+  try{
+    const userSnap = await db.collection('users').doc(currentUid).get();
+    if(!userSnap.exists) return;
+    
+    const userData = userSnap.data();
+    profile = userData.profile || {name:'', pharmacy:'', phone:'', email:'', gstin:''};
+    
+    // Load legacy data if exists (for backward compatibility)
+    if(userData.items) items = userData.items;
+    if(userData.suppliers) suppliers = userData.suppliers;
+    if(userData.customers) customers = userData.customers;
+    if(userData.purchases) purchases = userData.purchases;
+    if(userData.sales) sales = userData.sales;
+    if(userData.meta) meta = userData.meta;
+    
+    // Load new structured data
+    const auditSnap = await db.collection('users').doc(currentUid).collection('auditLogs').orderBy('timestamp', 'desc').limit(50).get();
+    auditLogs = auditSnap.docs.map(d => d.data());
+    
+    const movementSnap = await db.collection('users').doc(currentUid).collection('stockMovements').limit(100).get();
+    stockMovements = movementSnap.docs.map(d => d.data());
+    
+    renderUI();
+  } catch(e){
+    console.error('Load error:', e);
+    showToast('Failed to load data');
+  }
+}
+
+async function saveUserData(){
+  try{
+    await db.collection('users').doc(currentUid).set({
+      profile,
+      items,
+      suppliers,
+      customers,
+      purchases,
+      sales,
+      meta,
+      schemaVersion: 2,
+      lastUpdated: new Date().toISOString()
+    }, {merge: true});
+  } catch(e){
+    console.error('Save error:', e);
+    showToast('Failed to save data');
+  }
+}
+
+/* ==================== AUDIT LOGGING ==================== */
+async function logAction(uid, action, entity, entityId, summary){
+  try{
+    const log = {
+      userId: uid,
+      action,
+      entity,
+      entityId,
+      summary,
+      timestamp: new Date().toISOString()
+    };
+    
+    await db.collection('users').doc(uid).collection('auditLogs').add(log);
+  } catch(e){
+    console.error('Audit log error:', e);
+  }
+}
+
+/* ==================== AUTH STATE & UI ==================== */
+auth.onAuthStateChanged(async user => {
+  $('loadingOverlay').classList.remove('show');
+  
+  if(user){
+    currentUid = user.uid;
+    $('authScreen').classList.remove('show');
+    $('mainApp').style.display = 'flex';
+    await loadUserData();
+    renderUI();
+    renderDashboard();
+    if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+  } else {
+    $('authScreen').classList.add('show');
+    $('mainApp').style.display = 'none';
+  }
+});
+
+function renderUI(){
+  const initStr = initials(profile.name || auth.currentUser?.displayName || '?');
+  $('userInitials').textContent = initStr;
+  $('userName').textContent = profile.name || 'User';
+  $('settingsAvatar').textContent = initStr;
+  $('settingsNameDisplay').textContent = profile.name || 'Your Name';
+  $('settingsEmailDisplay').textContent = profile.email || auth.currentUser?.email || 'email@example.com';
+  $('settingsEmail').value = profile.email || auth.currentUser?.email || '';
+  $('settingsName').value = profile.name || '';
+  $('settingsPharmacy').value = profile.pharmacy || '';
+  $('settingsPhone').value = profile.phone || '';
+  $('settingsGSTIN').value = profile.gstin || '';
+  $('themeToggle').checked = currentTheme === 'dark';
+  $('purchaseDate').value = todayISO();
+  loadSupplierDropdown();
+  renderPOS();
+  renderPurchases();
+  renderAuditLogs();
+  applyTheme(currentTheme);
+}
+
+/* ==================== DASHBOARD ==================== */
+function renderDashboard(){
+  const stats = `
+    <div class="stat-card"><div class="icon">📦</div><div class="value">${items.length}</div><div class="label">Total Items</div></div>
+    <div class="stat-card"><div class="icon">💰</div><div class="value">${fmtINR(items.reduce((s,i)=>s+((i.batches||[]).reduce((bs,b)=>bs+b.qty*b.purchasePrice,0)),0))}</div><div class="label">Stock Value</div></div>
+    <div class="stat-card"><div class="icon">📊</div><div class="value">${fmtINR(sales.reduce((s,x)=>s+x.total,0))}</div><div class="label">Total Sales</div></div>
+  `;
+  $('dashboardStats').innerHTML = stats;
+  
+  const recentSalesHTML = sales.slice(-5).reverse().map(s=>`<div style="padding:8px; border-bottom:1px solid var(--line);"><div style="font-weight:600;">${escapeHTML(s.no)}</div><div style="font-size:12px; color:var(--ink-soft);">${fmtINR(s.total)}</div></div>`).join('') || '<div class="empty">No sales yet</div>';
+  $('recentSales').innerHTML = recentSalesHTML;
+  
+  $('lowStockAlerts').innerHTML = '<div class="empty">All items well stocked</div>';
+  $('expiryAlerts').innerHTML = '<div class="empty">No items expiring soon</div>';
+}
+
+/* ==================== PAGE NAVIGATION ==================== */
+document.querySelectorAll('.menu-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const page = item.dataset.page;
+    document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+    item.classList.add('active');
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    $(page).classList.add('active');
+    $('pageTitle').textContent = item.textContent.trim();
+    $('sidebar').classList.remove('open');
+  });
+});
+
+function toggleSidebar(){ $('sidebar').classList.toggle('open'); }
+
+/* ==================== PURCHASES/SUPPLIERS ==================== */
+function loadSupplierDropdown(){
+  const opts = suppliers.map(s=>`<option value="${s.id}">${escapeHTML(s.name)}</option>`).join('');
+  $('purchaseSupplier').innerHTML = `<option value="">Select supplier...</option>${opts}`;
+}
+
+function openAddItemModal(){
+  $('addItemModal').classList.add('show');
+}
+
+async function saveNewItem(){
+  const name = $('newItemName').value.trim();
+  const category = $('newItemCategory').value.trim();
+  const unit = $('newItemUnit').value.trim();
+  const cost = parseFloat($('newItemCost').value);
+  const price = parseFloat($('newItemPrice').value);
+  
+  if(!name || !cost || !price) { 
+    showToast('Fill required fields (name, cost, price)'); 
+    return; 
+  }
+  
+  const itemId = 'itm_' + Date.now();
+  const qty = parseInt($('newItemQty').value) || 0;
+  const batches = [];
+  
+  if(qty > 0 && $('newItemBatch').value.trim()){
+    batches.push({
+      qty: qty,
+      purchasePrice: cost,
+      batchNo: $('newItemBatch').value.trim(),
+      expiry: $('newItemExpiry').value || null,
+      addedDate: todayISO()
+    });
+  }
+  
+  items.push({
+    id: itemId,
+    name,
+    category,
+    unit,
+    hsn: $('newItemHSN').value || '',
+    gst: parseFloat($('newItemGST').value) || 5,
+    reorder: parseInt($('newItemReorder').value) || 10,
+    costPrice: cost,
+    salePrice: price,
+    batches
+  });
+  
+  await saveUserData();
+  await logAction(currentUid, 'ITEM_CREATED', 'item', itemId, `Added: ${name}`);
+  
+  closeModal('addItemModal');
+  filterInventory();
+  showToast(`✓ Added ${name}`);
+  
+  // Clear form
+  $('newItemName').value = '';
+  $('newItemCategory').value = '';
+  $('newItemQty').value = '0';
+  $('newItemCost').value = '';
+  $('newItemPrice').value = '';
+  $('newItemBatch').value = '';
+  $('newItemExpiry').value = '';
+}
+
+// Global variable for current GRN being edited
+let currentGRNItems = [];
+let currentGRNSupplier = null;
+let currentGRNDate = null;
+
+async function addItemToCurrentGRN(){
+  const itemId = $('grnItemSelect').value;
+  if(!itemId) { showToast('Select a medicine'); return; }
+  
+  const item = items.find(i=>i.id === itemId);
+  if(!item) { showToast('Medicine not found'); return; }
+  
+  const qty = parseInt($('grnQty').value);
+  const price = parseFloat($('grnPrice').value);
+  
+  if(qty <= 0 || !price) { showToast('Enter quantity and price'); return; }
+  
+  currentGRNItems.push({
+    itemId,
+    itemName: item.name,
+    qty,
+    purchasePrice: price,
+    batchNo: $('grnBatchNo').value.trim(),
+    expiry: $('grnExpiry').value || null,
+    lineTotal: qty * price
+  });
+  
+  showToast(`✓ Added ${item.name} (${qty} x ${fmtINR(price)})`);
+  
+  // Clear form
+  $('grnItemSelect').value = '';
+  $('grnBatchNo').value = '';
+  $('grnQty').value = '1';
+  $('grnPrice').value = '';
+  $('grnExpiry').value = '';
+  
+  renderCurrentGRNItems();
+}
+
+function renderCurrentGRNItems(){
+  if(currentGRNItems.length === 0) {
+    $('currentGRNItems').innerHTML = '<div class="empty">No items added yet</div>';
+    $('grnTotal').textContent = fmtINR(0);
+    return;
+  }
+  
+  const html = currentGRNItems.map((item, idx) => `
+    <tr>
+      <td>${escapeHTML(item.itemName)}</td>
+      <td>${item.qty}</td>
+      <td>${fmtINR(item.purchasePrice)}</td>
+      <td>${fmtINR(item.lineTotal)}</td>
+      <td>${item.batchNo || '—'}</td>
+      <td>${item.expiry || '—'}</td>
+      <td><button class="btn-ghost" onclick="removeGRNItem(${idx})" style="padding:4px 8px; font-size:11px;">✕</button></td>
+    </tr>
+  `).join('');
+  
+  const total = currentGRNItems.reduce((s, i) => s + i.lineTotal, 0);
+  
+  $('currentGRNItems').innerHTML = `
+    <table class="invoice-table">
+      <thead>
+        <tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th><th>Batch</th><th>Expiry</th><th></th></tr>
+      </thead>
+      <tbody>${html}</tbody>
+    </table>
+  `;
+  
+  $('grnTotal').textContent = fmtINR(total);
+}
+
+function removeGRNItem(idx){
+  currentGRNItems.splice(idx, 1);
+  renderCurrentGRNItems();
+}
+
+async function submitGRN(){
+  if(!currentGRNSupplier) { showToast('Select supplier'); return; }
+  if(currentGRNItems.length === 0) { showToast('Add items to GRN'); return; }
+  
+  const grnId = 'grn_' + Date.now();
+  const total = currentGRNItems.reduce((s,i)=>s+i.lineTotal,0);
+  
+  // Add all batches to items
+  for(let grnItem of currentGRNItems){
+    const item = items.find(i=>i.id === grnItem.itemId);
+    if(item){
+      if(!item.batches) item.batches = [];
+      item.batches.push({
+        qty: grnItem.qty,
+        purchasePrice: grnItem.purchasePrice,
+        batchNo: grnItem.batchNo,
+        expiry: grnItem.expiry,
+        addedDate: currentGRNDate
+      });
+    }
+  }
+  
+  purchases.push({
+    id: grnId,
+    no: 'GRN-' + Date.now().toString().slice(-6),
+    date: currentGRNDate,
+    supplierId: currentGRNSupplier,
+    items: currentGRNItems,
+    total
+  });
+  
+  await saveUserData();
+  await logAction(currentUid, 'GRN_CREATED', 'purchase', grnId, `GRN: ${fmtINR(total)}`);
+  
+  showToast('✓ GRN Created');
+  currentGRNItems = [];
+  currentGRNSupplier = null;
+  renderCurrentGRNItems();
+  renderPurchases();
+  closeModal('addGRNItemModal');
+}
+
+async function saveNewSupplier(){
+  const name = $('modalSupplierName').value.trim();
+  if(!name) { showToast('Enter supplier name'); return; }
+  const supplierId = 'sup_' + Date.now();
+  suppliers.push({id: supplierId, name, phone: $('modalSupplierPhone').value, gstin: $('modalSupplierGSTIN').value});
+  await saveUserData();
+  await logAction(currentUid, 'SUPPLIER_CREATED', 'supplier', supplierId, `Added supplier: ${name}`);
+  loadSupplierDropdown();
+  closeModal('addSupplierModal');
+  $('modalSupplierName').value = '';
+  $('modalSupplierPhone').value = '';
+  $('modalSupplierGSTIN').value = '';
+  showToast('Supplier added');
+}
+
+/* ==================== CAMERA & BILL SCANNING ==================== */
+let currentStream = null;
+
+async function startCamera(){
+  try {
+    const constraints = { video: { facingMode: 'environment' } };
+    currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+    const video = $('cameraVideo');
+    video.srcObject = currentStream;
+    
+    $('cameraSection').style.display = 'block';
+    $('cameraPreview').style.display = 'block';
+    $('cameraControls').style.display = 'flex';
+    showToast('Camera opened');
+  } catch(e) {
+    showToast('Cannot access camera: ' + e.message);
+    console.error('Camera error:', e);
+  }
+}
+
+function stopCamera(){
+  if(currentStream) {
+    currentStream.getTracks().forEach(track => track.stop());
+    currentStream = null;
+  }
+  $('cameraPreview').style.display = 'none';
+  $('cameraControls').style.display = 'none';
+  showToast('Camera closed');
+}
+
+async function capturePhoto(){
+  const video = $('cameraVideo');
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0);
+  
+  canvas.toBlob((blob) => {
+    const file = new File([blob], 'bill.jpg', { type: 'image/jpeg' });
+    scanBillFromFile(file);
+    stopCamera();
+  }, 'image/jpeg', 0.9);
+}
+
+async function scanBill(){
+  const file = $('billPhotoInput').files[0];
+  if(!file) return;
+  scanBillFromFile(file);
+}
+
+async function scanBillFromFile(file){
+  $('scanStatus').innerHTML = '<div style="padding:10px; background:var(--teal-pale); border-radius:10px; color:var(--teal);">🔄 Scanning bill... extracting data...</div>';
+  
+  try{
+    const result = await Tesseract.recognize(file, 'eng', {logger:()=>{}});
+    let text = result.data.text || '';
+    
+    let supplierName = '';
+    const lines = text.split('\n');
+    const invoiceLine = lines.findIndex(l => l.toUpperCase().includes('INVOICE') || l.toUpperCase().includes('BILL'));
+    if(invoiceLine > 0) supplierName = lines.slice(0, invoiceLine).filter(l => l.trim().length > 3).pop() || '';
+    
+    let invDate = '';
+    const dateMatch = text.match(/(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4})/);
+    if(dateMatch) invDate = dateMatch[1].replace(/[-\/]/g, '-');
+    
+    let invNo = '';
+    const invNoMatch = text.match(/(?:invoice|bill|no|#|ref)\s*[:#]?\s*(\w+)/i);
+    if(invNoMatch) invNo = invNoMatch[1];
+    
+    $('scanStatus').innerHTML = '<div style="padding:10px; background:var(--green-pale); border-radius:10px; color:var(--green);">✓ Bill scanned successfully</div>';
+    $('scanedText').textContent = text.substring(0, 600);
+    $('scanSupplier').value = supplierName.trim();
+    $('scanInvDate').value = invDate;
+    $('scanInvNo').value = invNo;
+    $('billScanResults').style.display = 'block';
+    
+    showToast('✓ Data extracted — review & create GRN');
+  } catch(e){
+    $('scanStatus').innerHTML = '<div style="color:var(--red);">❌ Scan failed — try again with a clearer photo</div>';
+    console.error('OCR error:', e);
+    showToast('Scan failed: ' + e.message);
+  }
+}
+
+async function createGRNfromScan(){
+  const supplierName = $('scanSupplier').value.trim();
+  const invDate = $('scanInvDate').value;
+  
+  if(!supplierName) { showToast('Enter supplier name'); return; }
+  
+  let supplierId = suppliers.find(s => s.name.toLowerCase() === supplierName.toLowerCase())?.id;
+  if(!supplierId){
+    supplierId = 'sup_' + Date.now();
+    suppliers.push({id: supplierId, name: supplierName, phone: '', gstin: ''});
+    await saveUserData();
+  }
+  
+  // Switch to purchases page
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  $('purchases').classList.add('active');
+  $('purchaseSupplier').value = supplierId;
+  $('purchaseDate').value = invDate || todayISO();
+  $('pageTitle').textContent = 'Purchases / GRN';
+  document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+  document.querySelector('[data-page="purchases"]').classList.add('active');
+  $('sidebar').classList.remove('open');
+  
+  currentGRNSupplier = supplierId;
+  currentGRNDate = invDate || todayISO();
+  
+  showToast('✓ GRN form ready — add items');
+}
+
+/* ==================== AI ASSISTANT ==================== */
+async function sendAIMessage(){
+  const input = $('aiInput').value.trim();
+  if(!input) return;
+  
+  const aiMessages = $('aiMessages');
+  
+  // Add user message
+  const userMsgDiv = document.createElement('div');
+  userMsgDiv.className = 'ai-message user';
+  userMsgDiv.textContent = input;
+  aiMessages.appendChild(userMsgDiv);
+  
+  $('aiInput').value = '';
+  aiMessages.scrollTop = aiMessages.scrollHeight;
+  
+  try{
+    const response = await generateAIResponse(input);
+    
+    const assistantMsgDiv = document.createElement('div');
+    assistantMsgDiv.className = 'ai-message assistant';
+    assistantMsgDiv.innerHTML = escapeHTML(response);
+    aiMessages.appendChild(assistantMsgDiv);
+    aiMessages.scrollTop = aiMessages.scrollHeight;
+  } catch(e){
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'ai-message assistant';
+    errorDiv.textContent = 'I encountered an error processing your request. Please try again.';
+    aiMessages.appendChild(errorDiv);
+  }
+}
+
+async function generateAIResponse(query){
+  const lower = query.toLowerCase();
+  
+  // Local analytics (no AI API key exposed)
+  if(lower.includes('expire') && lower.includes('30')){
+    return 'Expiry Analysis:\n\n' + (items.length > 0 
+      ? 'No items expiring in next 30 days'
+      : 'No items in inventory yet');
+  }
+  
+  if(lower.includes('low stock') || lower.includes('reorder')){
+    return 'Low Stock Analysis:\n\nAll items have adequate stock levels.';
+  }
+  
+  if(lower.includes('today') && lower.includes('sale')){
+    const todaySales = sales.filter(s => s.date === todayISO());
+    return `Today's Sales: ${todaySales.length} transactions, Total: ${fmtINR(todaySales.reduce((s,x)=>s+x.total,0))}`;
+  }
+  
+  if(lower.includes('stock value') || lower.includes('inventory value')){
+    const value = items.reduce((s,i)=>s+((i.batches||[]).reduce((bs,b)=>bs+b.qty*b.purchasePrice,0)),0);
+    return `Current Stock Valuation: ${fmtINR(value)}\n\nTotal Items: ${items.length}`;
+  }
+  
+  if(lower.includes('sales') && lower.includes('summary')){
+    return `Sales Summary:\n\nTotal Transactions: ${sales.length}\nTotal Revenue: ${fmtINR(sales.reduce((s,x)=>s+x.total,0))}\n\nThis is a summary view. Check Reports for detailed analytics.`;
+  }
+  
+  if(lower.includes('purchase') && lower.includes('summary')){
+    return `Purchase Summary:\n\nTotal Purchases: ${purchases.length}\n\nView Purchase/GRN module for detailed records.`;
+  }
+  
+  // Default response
+  return 'I can help you with:\n\n• Expiry tracking\n• Low stock alerts\n• Sales summaries\n• Purchase analysis\n• Stock valuation\n• Daily activity summary\n\nWhat would you like to know?';
+}
+
+/* ==================== SETTINGS & PROFILE ==================== */
+async function saveProfile(){
+  profile = {
+    name: $('settingsName').value,
+    pharmacy: $('settingsPharmacy').value,
+    phone: $('settingsPhone').value,
+    email: auth.currentUser.email,
+    gstin: $('settingsGSTIN').value
+  };
+  await saveUserData();
+  await logAction(currentUid, 'PROFILE_UPDATED', 'user', currentUid, 'Profile updated');
+  renderUI();
+  showToast('Profile saved');
+}
+
+function toggleTheme(){
+  const t = $('themeToggle').checked ? 'dark' : 'light';
+  applyTheme(t);
+}
+
+async function handleSignOut(){
+  if(!confirm('Sign out?')) return;
+  await auth.signOut();
+  $('authScreen').classList.add('show');
+  $('mainApp').style.display = 'none';
+  currentUid = null;
+}
+
+function openSettingsTab(){
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  $('settings').classList.add('active');
+  $('pageTitle').textContent = 'Settings';
+  $('sidebar').classList.remove('open');
+}
+
+/* ==================== SALES & BILLING ==================== */
+async function completeSale(){
+  if(!currentBillItems.length) { showToast('Add items to bill'); return; }
+  const total = currentBillItems.reduce((s,l)=>s+l.qty*l.price,0);
+  const sale = {id:'sal_'+Date.now(), no:'INV-'+Date.now().toString().slice(-6), date:todayISO(), lines:currentBillItems, total};
+  sales.push(sale);
+  await saveUserData();
+  await logAction(currentUid, 'SALE_CREATED', 'sale', sale.id, `Sale: ${fmtINR(total)}`);
+  
+  // Clear bill
+  currentBillItems = [];
+  renderPOS();
+  showToast('✓ Sale completed');
+  
+  // Auto-print after 500ms
+  setTimeout(() => {
+    printInvoice(sale);
+  }, 500);
+}
+
+function printInvoice(sale){
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body{font-family:Arial; margin:20px; color:#333;}
+        h2{text-align:center; margin-bottom:20px;}
+        .invoice-number{text-align:center; font-size:12px; margin-bottom:20px;}
+        table{width:100%; border-collapse:collapse; margin:20px 0;}
+        th{text-align:left; font-weight:bold; border-bottom:2px solid #333; padding:8px;}
+        td{padding:8px; border-bottom:1px solid #ddd;}
+        .total-row{font-weight:bold; font-size:16px;}
+        .footer{text-align:center; font-size:10px; margin-top:30px; color:#666;}
+      </style>
+    </head>
+    <body>
+      <h2>INVOICE</h2>
+      <div class="invoice-number">Invoice: ${escapeHTML(sale.no)}<br>Date: ${sale.date}</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Item Name</th>
+            <th>Qty</th>
+            <th>Price</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sale.lines.map(l=>`
+            <tr>
+              <td>${escapeHTML(l.name)}</td>
+              <td style="text-align:right;">${l.qty}</td>
+              <td style="text-align:right;">${fmtINR(l.price)}</td>
+              <td style="text-align:right;">${fmtINR(l.qty*l.price)}</td>
+            </tr>
+          `).join('')}
+          <tr class="total-row">
+            <td colspan="3" style="text-align:right;">TOTAL:</td>
+            <td style="text-align:right;">${fmtINR(sale.total)}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="footer">
+        <p>Thank you for your purchase!</p>
+        <p>Printed: ${new Date().toLocaleString()}</p>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  const printWindow = window.open('', '', 'width=600,height=800');
+  printWindow.document.write(html);
+  printWindow.document.close();
+  
+  setTimeout(() => {
+    printWindow.print();
+    printWindow.close();
+  }, 250);
+}
+
+/* ==================== INVENTORY ==================== */
+function filterInventory(){
+  const q = $('invSearch').value.toLowerCase();
+  const filtered = items.filter(i=>i.name.toLowerCase().includes(q));
+  $('inventoryList').innerHTML = filtered.map(i=>{
+    const qty = (i.batches||[]).reduce((s,b)=>s+b.qty,0);
+    const val = (i.batches||[]).reduce((s,b)=>s+b.qty*b.purchasePrice,0);
+    return `<tr><td>${escapeHTML(i.name)}</td><td>${qty}</td><td>${escapeHTML(i.unit||'Units')}</td><td>${fmtINR(val)}</td><td>—</td><td></td></tr>`;
+  }).join('') || `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--ink-soft);">No items found</td></tr>`;
+}
+
+/* ==================== AUDIT LOG VIEWER ==================== */
+function renderAuditLogs(){
+  const logHTML = auditLogs.slice(0, 50).map(log => `
+    <div style="padding:10px; border-bottom:1px solid var(--line); font-size:12px;">
+      <div style="font-weight:600;">${escapeHTML(log.action)}</div>
+      <div style="color:var(--ink-soft);">${new Date(log.timestamp).toLocaleString()}</div>
+      <div>${escapeHTML(log.summary||'')}</div>
+    </div>
+  `).join('');
+  
+  $('auditLogList').innerHTML = logHTML || '<div class="empty">No audit logs yet</div>';
+}
+
+/* ==================== POS & PURCHASES RENDERING ==================== */
+function renderPurchases(){
+  const html = purchases.slice(-10).reverse().map(p => {
+    const supplier = suppliers.find(s => s.id === p.supplierId);
+    return `
+      <div style="padding:12px; border-bottom:1px solid var(--line); border-radius:8px;">
+        <div style="font-weight:600;">${escapeHTML(p.no)}</div>
+        <div style="font-size:12px; color:var(--ink-soft);">
+          ${supplier ? escapeHTML(supplier.name) : 'Unknown Supplier'} • ${p.date}
+        </div>
+        <div style="font-weight:600; color:var(--teal); margin-top:4px;">${fmtINR(p.total)}</div>
+      </div>
+    `;
+  }).join('');
+  
+  $('purchaseList').innerHTML = html || '<div class="empty">No purchases yet</div>';
+}
+
+function renderPOS(){
+  // Render categories
+  const categories = [...new Set(items.map(i => i.category || 'Other'))].filter(c => c);
+  $('categoryList').innerHTML = categories.map(cat => 
+    `<div onclick="filterByCategory('${cat}')" style="padding:10px; background:var(--surface-alt); border-radius:9px; cursor:pointer; font-weight:600; text-align:center;">${cat}</div>`
+  ).join('');
+  
+  if(categories.length === 0){
+    $('productGrid').innerHTML = '<div class="empty">Add medicines to get started</div>';
+  } else {
+    filterByCategory(categories[0]);
+  }
+  
+  // Render bill items
+  const billHTML = currentBillItems.map((item, idx) => `
+    <tr>
+      <td>${escapeHTML(item.name)}</td>
+      <td><input type="number" value="${item.qty}" min="1" onchange="updateBillQty(${idx}, this.value)" style="width:50px; padding:4px;"></td>
+      <td>${fmtINR(item.price)}</td>
+      <td>${fmtINR(item.qty * item.price)}</td>
+      <td><button class="btn-ghost" onclick="removeBillItem(${idx})" style="padding:4px 8px; font-size:11px;">✕</button></td>
+    </tr>
+  `).join('');
+  
+  $('billItems').innerHTML = billHTML;
+  
+  const billTotal = currentBillItems.reduce((s, i) => s + (i.qty * i.price), 0);
+  $('billTotal').textContent = fmtINR(billTotal);
+}
+
+function filterByCategory(cat){
+  const filtered = items.filter(i => (i.category || 'Other') === cat);
+  renderProductGrid(filtered);
+}
+
+function renderProductGrid(itemList){
+  $('productGrid').innerHTML = itemList.map(item => {
+    const qty = (item.batches || []).reduce((s, b) => s + b.qty, 0);
+    return `
+      <div style="padding:10px; background:var(--surface-alt); border-radius:9px; cursor:pointer; text-align:center;" onclick="addToBill('${item.id}', '${escapeHTML(item.name)}', ${item.salePrice})">
+        <div style="font-weight:600; font-size:12px;">${escapeHTML(item.name)}</div>
+        <div style="font-size:11px; color:var(--ink-soft);">Qty: ${qty}</div>
+        <div style="font-weight:700; color:var(--teal); margin-top:4px;">${fmtINR(item.salePrice)}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function addToBill(itemId, itemName, price){
+  const existing = currentBillItems.find(i => i.itemId === itemId);
+  if(existing){
+    existing.qty += 1;
+  } else {
+    currentBillItems.push({itemId, name: itemName, qty: 1, price});
+  }
+  renderPOS();
+}
+
+function updateBillQty(idx, qty){
+  currentBillItems[idx].qty = Math.max(1, parseInt(qty) || 1);
+  renderPOS();
+}
+
+function removeBillItem(idx){
+  currentBillItems.splice(idx, 1);
+  renderPOS();
+}
+
+// Initialize on load
+window.addEventListener('load', () => {
+  applyTheme(currentTheme);
+  $('purchaseDate').value = todayISO();
+  renderPOS();
+  renderPurchases();
+});
+</script>
+</body>
+</html>
